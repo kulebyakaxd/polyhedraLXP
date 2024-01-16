@@ -1,29 +1,29 @@
 import random
-from web3 import Web3
 from config import *
+from web3 import Web3
 import time
 from loguru import logger
 
-w3 = Web3(Web3.HTTPProvider("https://1rpc.io/linea"))
-contract = w3.eth.contract(address=Web3.to_checksum_address("0x366C1B89aA0783d0886B9EF817d10c8729783dCb"), abi=abi)
+w3 = Web3(Web3.HTTPProvider("https://bsc-dataseed1.ninicoin.io"))
+contract = w3.eth.contract(address=Web3.to_checksum_address(bsc_contractadr), abi=bsc_abi)
 
 
 def bridge(amount,key):
-    address = Web3.to_checksum_address(w3.eth.account.from_key(key).address)
-    logger.info(f"аккаунт {address} запущен")
-    nonce = w3.eth.get_transaction_count(address)
-    bridge_fee = contract.functions.estimateFee(1,transfer_chain_id,Web3.to_wei(amount, 'ether')).call()
+    wallet_address = Web3.to_checksum_address(w3.eth.account.from_key(key).address)
+    logger.info(f"аккаунт {wallet_address} запущен")
+    nonce = w3.eth.get_transaction_count(wallet_address)
+    bridge_fee = contract.functions.estimateFee(bsc_pool_id,transfer_chain_id,Web3.to_wei(amount, 'ether')).call()
     print(f"bridge fee = {Web3.from_wei(bridge_fee,'ether')}")
     tx_params = {
         'gasPrice': w3.eth.gas_price,
-        'from': address,
+        'from': wallet_address,
         'nonce': nonce,
         'value':  Web3.to_wei(amount, 'ether') + bridge_fee
     }
 
-    tx = contract.functions.transferETH(transfer_chain_id,Web3.to_wei(amount, 'ether'), address).build_transaction(tx_params)
+    tx = contract.functions.transferETH(transfer_chain_id,Web3.to_wei(amount, 'ether'), wallet_address).build_transaction(tx_params)
     signed_txn = w3.eth.account.sign_transaction(tx,key)
-    resp = w3.eth.send_raw_transaction(signed_txn.rawTransaction) 
+    resp = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
 
 
 def main():
